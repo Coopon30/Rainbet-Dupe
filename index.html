@@ -363,7 +363,6 @@ showGame(localStorage.getItem(CHOICE_KEY) || 'coin');
 
 /* -------------------------
   Coin, Slots, Plinko, Mines, Crash, Plane (existing)
-  (kept from earlier — unchanged behavior)
   ------------------------- */
 /* Coin */
 document.getElementById('coinFlipBtn').addEventListener('click', ()=>{
@@ -857,7 +856,11 @@ function spinToNumber(targetNumber, onComplete){
   const idx = WHEEL_ORDER.indexOf(targetNumber);
   if(idx < 0) { console.warn('Invalid target'); onComplete && onComplete(); return; }
   const sectorAngle = 2*Math.PI / sectors;
-  const targetAngle = - (idx + 0.5) * sectorAngle;
+  
+  // *** THIS IS THE FIX ***
+  // Calculate angle to align the middle of the sector with the top arrow (-PI/2 or 12 o'clock)
+  const targetAngle = - (idx + 0.5) * sectorAngle - (Math.PI / 2);
+
   const spins = 5 + Math.floor(Math.random()*3);
   const finalRotation = currentRotation + spins * 2 * Math.PI + (targetAngle - (currentRotation % (2*Math.PI)));
   const duration = 4000 + Math.random()*1200;
@@ -1012,4 +1015,3 @@ window.addEventListener('resize', ()=> { if(!planeState.running) resetPlaneUI();
 </script>
 </body>
 </html>
-```
