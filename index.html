@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>RainPlay — Play-Money Casino (Full: Plane + Tables)</title>
+<title>RainPlay — Play-Money Casino (Full & Corrected)</title>
 <style>
   :root{--bg:#071022;--card:#0b1220;--accent:#2dd4bf;--text:#e6eef6}
   body{margin:0;font-family:Inter,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#071022,#0b1220);color:var(--text)}
@@ -45,9 +45,11 @@
   .marker.boost{background:#16a34a}
   .marker.ded{background:#b91c1c}
   .carrier{position:absolute;right:6px;bottom:6px;width:100px;height:36px;background:#0ea5a4;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700}
-  /* NEW roulette area */
-  .roulette-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:12px}
-  .wheel-canvas{background:linear-gradient(#0b141b,#061019);border-radius:50%;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+  /* roulette area */
+  .roulette-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:12px;position:relative}
+  .wheel-wrap{position:relative} /* Added a wrapper for canvas and arrow */
+  .wheel-canvas{background:linear-gradient(#0b141b,#061019);border-radius:50%;box-shadow:0 8px 30px rgba(0,0,0,.6);}
+  .wheel-arrow{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:15px solid #ffd166}
   .bets-panel{max-width:420px;background:rgba(255,255,255,0.02);padding:10px;border-radius:8px}
   .bets-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
   .bet-btn{padding:8px 10px;border-radius:6px;background:#0f1724;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
@@ -219,15 +221,16 @@
 
       <div id="rouletteGame" style="display:none">
         <div class="roulette-wrap">
-          <canvas id="wheelCanvas" class="wheel-canvas" width="360" height="360"></canvas>
-
+          <div class="wheel-wrap">
+            <div class="wheel-arrow"></div>
+            <canvas id="wheelCanvas" class="wheel-canvas" width="360" height="360"></canvas>
+          </div>
           <div class="bets-panel">
             <div style="display:flex;gap:8px;align-items:center">
               <div class="small">Selected bet: <span id="selectedBetDesc">None</span></div>
               <div style="flex:1"></div>
               <div class="small result-badge" id="lastResult">Last: —</div>
             </div>
-
             <div style="margin-top:10px">
               <div class="small">Quick chips</div>
               <div class="bets-row">
@@ -239,7 +242,6 @@
                 <button class="chip" data-chip="100">$100</button>
               </div>
             </div>
-
             <div style="margin-top:10px">
               <div class="small">Place a bet (uses 'Bet amount' from left panel)</div>
               <div class="bets-grid" id="betsGrid">
@@ -253,19 +255,16 @@
                 <button class="bet-btn" data-bettype="dozen" data-betval="2">2nd 12</button>
                 <button class="bet-btn" data-bettype="dozen" data-betval="3">3rd 12</button>
               </div>
-
               <div style="margin-top:8px">
                 <div class="small">Pick a specific number</div>
                 <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;max-height:120px;overflow:auto;padding-right:6px" id="numberGrid"></div>
               </div>
-
               <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
                 <button id="clearBets" class="bet-btn">Clear Bets</button>
                 <button id="spinWheelBtn" class="bet-btn">Spin Wheel</button>
                 <div style="flex:1"></div>
                 <div class="small">Total wager: <strong id="totalWager">$0.00</strong></div>
               </div>
-
               <div class="msg" id="rouletteMsg">Click a bet, set your bet amount, then press Spin.</div>
             </div>
           </div>
@@ -470,7 +469,8 @@ function randomMarkers(count, width){
   arr.sort((a,b)=>a.pos-b.pos); return arr;
 }
 
-function renderMarkers(){ Array.from(planeTrack.querySelectorAll('.marker')).forEach(m=>m.remove()); const maxW = planeTrack.clientWidth;
+function renderMarkers(){ Array.from(planeTrack.querySelectorAll('.marker')).forEach(m=>m.remove());
+  if (!planeTrack) return;
   planeState.markers.forEach((m,i)=>{ const el=document.createElement('div'); el.className='marker ' + (m.val>0?'boost':'ded'); el.style.left = `calc(${m.pos}% - 9px)`; el.dataset.idx=i; el.title = (m.val>0?'+':'') + m.val.toFixed(2) + 'x'; el.innerText = m.val>0?'+':'−'; planeTrack.appendChild(el); });
 }
 
@@ -575,7 +575,7 @@ function handValue(cards){
 function renderCards(el, cards, hideFirst=false){
   el.innerHTML='';
   cards.forEach((c,i)=>{
-    const node=document.createElement('div'); node.className='card'; if(hideFirst && i===0){ node.innerText='?'; node.style.background='#0f1724'; node.style.color='#fff'; } else { node.innerHTML = `${c.rank}<br><span style="font-size:11px">${c.suit}</span>`; node.style.background = (c.suit==='♥' || c.suit==='♦') ? '#fff' : '#fff'; node.style.color = '#000'; }
+    const node=document.createElement('div'); node.className='card'; if(hideFirst && i===0){ node.innerText='?'; node.style.background='#0f1724'; node.style.color='#fff'; } else { node.innerHTML = `${c.rank}<br><span style="font-size:11px">${c.suit}</span>`; node.style.background = '#fff'; node.style.color = '#000'; }
     el.appendChild(node);
   });
 }
@@ -602,19 +602,15 @@ bjDealBtn.addEventListener('click', ()=>{
     dealerScoreEl.innerText = 'Dealer: ?';
     bjMsg.innerText = 'Hit or Stand';
     bjHitBtn.disabled=false; bjStandBtn.disabled=false; bjDealBtn.disabled=true;
-    // check naturals
     const pVal = handValue(bjState.player); const dVal = handValue(bjState.dealer);
     if(pVal===21 || dVal===21){
       bjState.dealerHidden=false;
       if(pVal===21 && dVal===21){
-        // push
         setBal(getBal()+bet); endBjRound('Push — both have blackjack. Bet returned.', bet);
       } else if(pVal===21){
-        // player blackjack pays 1.5x
-        const payout = Math.floor(bet * 2.5 * 100)/100; // returns bet + 1.5*bet = 2.5*bet
+        const payout = bet * 2.5;
         setBal(getBal()+payout); endBjRound('Blackjack! You win 1.5x.', payout);
       } else {
-        // dealer blackjack
         endBjRound('Dealer has blackjack. You lose.', 0);
       }
     }
@@ -632,7 +628,6 @@ bjHitBtn.addEventListener('click', ()=>{
 
 bjStandBtn.addEventListener('click', ()=>{
   if(!bjState.inRound) return;
-  // reveal dealer and play dealer rules (hit until 17)
   bjState.dealerHidden=false;
   renderCards(dealerCardsEl, bjState.dealer);
   let dVal = handValue(bjState.dealer);
@@ -642,55 +637,46 @@ bjStandBtn.addEventListener('click', ()=>{
     renderCards(dealerCardsEl, bjState.dealer);
   }
   const pVal = handValue(bjState.player);
-  const dealerVal = dVal;
-  if(dealerVal>21 || pVal>dealerVal){
-    // player wins 1:1
-    const payout = Math.floor(bjState.bet * 2 * 100)/100;
+  if(dVal>21 || pVal>dVal){
+    const payout = bjState.bet * 2;
     setBal(getBal() + payout);
-    endBjRound(`You win! Player ${pVal} vs Dealer ${dealerVal}. Payout ${money(payout)}.`, payout);
-  } else if(pVal === dealerVal){
-    // push
+    endBjRound(`You win! Player ${pVal} vs Dealer ${dVal}. Payout ${money(payout)}.`, payout);
+  } else if(pVal === dVal){
     setBal(getBal()+bjState.bet);
     endBjRound(`Push — ${pVal}. Bet returned.`, bjState.bet);
   } else {
-    endBjRound(`Dealer wins ${dealerVal}. You lose ${money(bjState.bet)}.`, 0);
+    endBjRound(`Dealer wins ${dVal}. You lose ${money(bjState.bet)}.`, 0);
   }
 });
 
 /* -------------------------
-  NEW Roulette: wheel, bets and spin
+  Roulette: wheel, bets and spin
   ------------------------- */
-
-/* Wheel order — European standard order (clockwise) */
-const WHEEL_ORDER = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26]; // 37 numbers
-
-/* color mapping for wheel numbers */
+const WHEEL_ORDER = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
 const RED_NUMS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 function wheelColor(n){
   if(n===0) return 'green';
   return RED_NUMS.has(n) ? 'red' : 'black';
 }
 
-/* Canvas wheel draw */
 const canvas = document.getElementById('wheelCanvas');
-const ctx = canvas.getContext('2d');
-const size = canvas.width;
+const ctx = canvas ? canvas.getContext('2d') : null;
+const size = canvas ? canvas.width : 0;
 const cx = size/2;
 const cy = size/2;
 const radius = size/2 - 6;
 
 function drawWheel(rotation=0){
+  if (!ctx) return;
   ctx.clearRect(0,0,size,size);
   ctx.save();
   ctx.translate(cx,cy);
   ctx.rotate(rotation);
   const sectors = WHEEL_ORDER.length;
   const sectorAngle = 2*Math.PI / sectors;
-  // draw sectors
   for(let i=0;i<sectors;i++){
     const start = i*sectorAngle;
     const end = start + sectorAngle;
-    // color
     const n = WHEEL_ORDER[i];
     ctx.beginPath();
     ctx.moveTo(0,0);
@@ -698,10 +684,8 @@ function drawWheel(rotation=0){
     ctx.closePath();
     ctx.fillStyle = wheelColor(n) === 'red' ? '#b91c1c' : (wheelColor(n) === 'black' ? '#111827' : '#065f46');
     ctx.fill();
-    // stroke
     ctx.strokeStyle = 'rgba(255,255,255,0.03)';
     ctx.stroke();
-    // number label
     ctx.save();
     ctx.rotate(start + sectorAngle/2);
     ctx.translate(radius - 36, 0);
@@ -713,25 +697,14 @@ function drawWheel(rotation=0){
     ctx.restore();
   }
   ctx.restore();
-  // draw outer ring
   ctx.beginPath();
   ctx.arc(cx,cy,radius+4,0,2*Math.PI);
   ctx.strokeStyle = 'rgba(255,255,255,0.06)';
   ctx.lineWidth = 6;
   ctx.stroke();
-
-  // draw arrow at top center
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - radius - 14);
-  ctx.lineTo(cx - 12, cy - radius + 10);
-  ctx.lineTo(cx + 12, cy - radius + 10);
-  ctx.closePath();
-  ctx.fillStyle = '#ffd166';
-  ctx.fill();
 }
 
-/* bets modelling */
-let activeBets = []; // array of {type:'color'|'parity'|'range'|'number'|'dozen', val:..., amount:...}
+let activeBets = [];
 const betsGrid = document.getElementById('betsGrid');
 const numberGrid = document.getElementById('numberGrid');
 const selectedBetDesc = document.getElementById('selectedBetDesc');
@@ -761,8 +734,8 @@ function renderActiveBets(){
   updateTotal();
 }
 
-/* populate number grid 0..36 */
 function buildNumberGrid(){
+  if (!numberGrid) return;
   numberGrid.innerHTML = '';
   for(let n=0;n<=36;n++){
     const btn = document.createElement('button');
@@ -782,10 +755,8 @@ function buildNumberGrid(){
     numberGrid.appendChild(btn);
   }
 }
-if(document.getElementById('rouletteGame')) buildNumberGrid();
+buildNumberGrid();
 
-
-/* bet buttons actions (color, parity, range, dozen) */
 document.querySelectorAll('#betsGrid .bet-btn').forEach(b=>{
   b.addEventListener('click', () => {
     const type = b.dataset.bettype;
@@ -799,36 +770,31 @@ document.querySelectorAll('#betsGrid .bet-btn').forEach(b=>{
   });
 });
 
-/* chip quick buttons: set betInput to chip value */
 document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', e => betInput.value = Number(e.currentTarget.dataset.chip)));
 
-/* clear bets */
-document.getElementById('clearBets').addEventListener('click', () => {
+document.getElementById('clearBets')?.addEventListener('click', () => {
   if(confirm('Clear all pending bets?')) clearBets();
 });
 
-/* small helper to show transient message */
 let tempMsgTimeout = null;
 function showTempMessage(txt){
+  if (!rouletteMsg) return;
   rouletteMsg.innerText = txt;
   if(tempMsgTimeout) clearTimeout(tempMsgTimeout);
   tempMsgTimeout = setTimeout(()=> { rouletteMsg.innerText = 'Click a bet, set your bet amount, then press Spin.' }, 2500);
 }
 
-/* Spin wheel logic */
 const spinWheelBtn = document.getElementById('spinWheelBtn');
 let wheelSpinning = false;
 
-function colorForResult(n){ return wheelColor(n); }
-
 function computePayouts(result){
-  const resColor = colorForResult(result);
+  const resColor = wheelColor(result);
   const resParity = (result !== 0) ? (result % 2 === 0 ? 'even' : 'odd') : null;
   const resRange = (result >=1 && result <=18) ? 'low' : (result >=19 && result <=36) ? 'high' : null;
   const payouts = [];
   activeBets.forEach(b => {
     const betAmt = Number(b.amount)||0;
-    let won = false; let payout = 0; // total returned (including original bet)
+    let won = false; let payout = 0;
     if(b.type === 'number'){
       if(b.val === result) { won = true; payout = betAmt * 36; }
     } else if(b.type === 'color'){
@@ -841,8 +807,8 @@ function computePayouts(result){
       const n = result;
       let which = null;
       if(n>=1 && n<=12) which = '1';
-      if(n>=13 && n<=24) which = '2';
-      if(n>=25 && n<=36) which = '3';
+      else if(n>=13 && n<=24) which = '2';
+      else if(n>=25 && n<=36) which = '3';
       if(which === b.val){ won = true; payout = betAmt * 3; }
     }
     payouts.push({bet:b, won, payout});
@@ -854,13 +820,9 @@ let currentRotation = 0;
 function spinToNumber(targetNumber, onComplete){
   const sectors = WHEEL_ORDER.length;
   const idx = WHEEL_ORDER.indexOf(targetNumber);
-  if(idx < 0) { console.warn('Invalid target'); onComplete && onComplete(); return; }
+  if(idx < 0) { console.warn('Invalid target'); onComplete?.(); return; }
   const sectorAngle = 2*Math.PI / sectors;
-  
-  // *** THIS IS THE FIX ***
-  // Calculate angle to align the middle of the sector with the top arrow (-PI/2 or 12 o'clock)
   const targetAngle = - (idx + 0.5) * sectorAngle - (Math.PI / 2);
-
   const spins = 5 + Math.floor(Math.random()*3);
   const finalRotation = currentRotation + spins * 2 * Math.PI + (targetAngle - (currentRotation % (2*Math.PI)));
   const duration = 4000 + Math.random()*1200;
@@ -874,7 +836,7 @@ function spinToNumber(targetNumber, onComplete){
     else {
       currentRotation = finalRotation % (2*Math.PI);
       drawWheel(currentRotation);
-      onComplete && onComplete();
+      onComplete?.();
     }
   }
   requestAnimationFrame(animate);
@@ -882,7 +844,7 @@ function spinToNumber(targetNumber, onComplete){
 
 function randomWheelNumber(){ return WHEEL_ORDER[Math.floor(Math.random() * WHEEL_ORDER.length)]; }
 
-if(spinWheelBtn) spinWheelBtn.addEventListener('click', async () => {
+spinWheelBtn?.addEventListener('click', async () => {
   if(wheelSpinning) return;
   if(activeBets.length === 0) { alert('Place at least one bet before spinning.'); return; }
   
@@ -894,35 +856,40 @@ if(spinWheelBtn) spinWheelBtn.addEventListener('click', async () => {
 
   wheelSpinning = true;
   spinWheelBtn.disabled = true;
-  document.getElementById('rouletteMsg').innerText = 'Spinning...';
+  rouletteMsg.innerText = 'Spinning...';
   const result = randomWheelNumber();
   spinToNumber(result, () => {
     wheelSpinning = false;
     spinWheelBtn.disabled = false;
     const payouts = computePayouts(result);
     let totalReturn = 0;
-    let net = -total; // start with total wager as net loss
     payouts.forEach(p => {
-      if(p.won){
-        totalReturn += p.payout;
-        net += p.payout;
-      }
+      if(p.won) totalReturn += p.payout;
     });
+    const net = totalReturn - total;
     if(totalReturn > 0) setBal(getBal() + totalReturn);
     const col = wheelColor(result);
-    document.getElementById('rouletteMsg').innerText = `Result: ${result} (${col.toUpperCase()}). Net ${money(net)}.`;
+    rouletteMsg.innerText = `Result: ${result} (${col.toUpperCase()}). Net ${net >= 0 ? '+' : ''}${money(net)}.`;
     lastResultEl.innerText = `Last: ${result} ${col}`;
     clearBets();
   });
 });
 
-if(document.getElementById('rouletteGame')) drawWheel(0);
+drawWheel(0);
 
 /* -------------------------
   Baccarat
   ------------------------- */
-/* Card utilities reused — build a shoe with multiple decks */
-function makeShoe(decks=6){
+let baccShoe = makeShoe(6);
+const baccDealBtn = document.getElementById('baccDeal');
+const baccMsg = document.getElementById('baccMsg');
+const baccPlayerEl = document.getElementById('baccPlayer');
+const baccBankerEl = document.getElementById('baccBanker');
+const baccPlayerScore = document.getElementById('baccPlayerScore');
+const baccBankerScore = document.getElementById('baccBankerScore');
+const baccBetSelect = document.getElementById('baccBet');
+
+function makeBaccShoe(decks=6){
   const suits=['♠','♥','♦','♣']; const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
   const shoe=[];
   for(let d=0;d<decks;d++){
@@ -938,42 +905,31 @@ function baccValue(card){
   return Number(card.rank);
 }
 function baccTotal(cards){
-  let s=0; for(const c of cards) s += baccValue(c); return s % 10;
+  return cards.reduce((s,c)=> s + baccValue(c), 0) % 10;
 }
 
-const baccDealBtn = document.getElementById('baccDeal');
-const baccMsg = document.getElementById('baccMsg');
-const baccPlayerEl = document.getElementById('baccPlayer');
-const baccBankerEl = document.getElementById('baccBanker');
-const baccPlayerScore = document.getElementById('baccPlayerScore');
-const baccBankerScore = document.getElementById('baccBankerScore');
-const baccBetSelect = document.getElementById('baccBet');
-
-let baccShoe = makeShoe(6);
-
-baccDealBtn.addEventListener('click', ()=>{
+baccDealBtn?.addEventListener('click', ()=>{
   try{
     const bet = getBet(); const betType = baccBetSelect.value; setBal(getBal()-bet);
-    if(baccShoe.length < 20) baccShoe = makeShoe(6);
+    if(baccShoe.length < 20) baccShoe = makeBaccShoe(6);
     const player=[baccShoe.pop(), baccShoe.pop()];
     const banker=[baccShoe.pop(), baccShoe.pop()];
     let playerTotal = baccTotal(player), bankerTotal = baccTotal(banker);
     let thirdForPlayer = null;
-    if(playerTotal >=8 || bankerTotal >=8){
-    } else {
-      if(playerTotal <=5){
+    if(playerTotal < 8 && bankerTotal < 8){
+      if(playerTotal <= 5){
         thirdForPlayer = baccShoe.pop(); player.push(thirdForPlayer);
       }
       bankerTotal = baccTotal(banker);
-      if(thirdForPlayer === null){
-        if(bankerTotal <=5){ banker.push(baccShoe.pop()); }
+      const p3Val = baccValue(thirdForPlayer);
+      if(!thirdForPlayer){
+        if(bankerTotal <= 5) banker.push(baccShoe.pop());
       } else {
-        const p3 = baccValue(thirdForPlayer);
-        if(bankerTotal <=2) { banker.push(baccShoe.pop()); }
-        else if(bankerTotal === 3 && p3 !== 8){ banker.push(baccShoe.pop()); }
-        else if(bankerTotal === 4 && p3>=2 && p3<=7){ banker.push(baccShoe.pop()); }
-        else if(bankerTotal === 5 && p3>=4 && p3<=7){ banker.push(baccShoe.pop()); }
-        else if(bankerTotal === 6 && (p3===6 || p3===7)){ banker.push(baccShoe.pop()); }
+        if(bankerTotal <= 2) banker.push(baccShoe.pop());
+        else if(bankerTotal === 3 && p3Val !== 8) banker.push(baccShoe.pop());
+        else if(bankerTotal === 4 && p3Val >= 2 && p3Val <= 7) banker.push(baccShoe.pop());
+        else if(bankerTotal === 5 && p3Val >= 4 && p3Val <= 7) banker.push(baccShoe.pop());
+        else if(bankerTotal === 6 && (p3Val === 6 || p3Val === 7)) banker.push(baccShoe.pop());
       }
     }
     playerTotal = baccTotal(player); bankerTotal = baccTotal(banker);
@@ -981,16 +937,16 @@ baccDealBtn.addEventListener('click', ()=>{
     player.forEach(c=>{ const n=document.createElement('div'); n.className='card'; n.innerHTML = `${c.rank}<br><span style="font-size:11px">${c.suit}</span>`; baccPlayerEl.appendChild(n); });
     banker.forEach(c=>{ const n=document.createElement('div'); n.className='card'; n.innerHTML = `${c.rank}<br><span style="font-size:11px">${c.suit}</span>`; baccBankerEl.appendChild(n); });
     baccPlayerScore.innerText = 'Player: ' + playerTotal; baccBankerScore.innerText = 'Banker: ' + bankerTotal;
-    let payout=0; let msg='';
+    let msg='';
     if(playerTotal > bankerTotal){
-      if(betType === 'player'){ payout = Math.floor(bet * 2 * 100)/100; setBal(getBal()+payout); msg = `Player wins ${playerTotal} vs ${bankerTotal}. You won ${money(payout - bet)}.`; }
-      else { msg = `Player wins ${playerTotal} vs ${bankerTotal}. You lost ${money(bet)}.`; }
+      if(betType === 'player'){ const payout = bet * 2; setBal(getBal()+payout); msg = `Player wins ${playerTotal} to ${bankerTotal}. You won ${money(bet)}.`; }
+      else { msg = `Player wins. You lost ${money(bet)}.`; }
     } else if(bankerTotal > playerTotal){
-      if(betType === 'banker'){ const profit = Math.floor(bet * 0.95 * 100)/100; payout = Math.floor((bet + profit) * 100)/100; setBal(getBal()+payout); msg = `Banker wins ${bankerTotal} vs ${playerTotal}. You won ${money(payout - bet)} (0.95x).`; }
-      else { msg = `Banker wins ${bankerTotal} vs ${playerTotal}. You lost ${money(bet)}.`; }
+      if(betType === 'banker'){ const payout = bet + bet * 0.95; setBal(getBal()+payout); msg = `Banker wins ${bankerTotal} to ${playerTotal}. You won ${money(bet * 0.95)} (5% commission).`; }
+      else { msg = `Banker wins. You lost ${money(bet)}.`; }
     } else {
-      if(betType === 'tie'){ payout = Math.floor(bet * 9 * 100)/100; setBal(getBal()+payout); msg = `Tie ${playerTotal}. You won ${money(payout - bet)} (8:1).`; }
-      else { setBal(getBal()+bet); msg = `Tie ${playerTotal}. Bet returned.`; payout = bet; }
+      if(betType === 'tie'){ const payout = bet * 9; setBal(getBal()+payout); msg = `Tie at ${playerTotal}. You won ${money(bet * 8)}.`; }
+      else { setBal(getBal()+bet); msg = `Tie at ${playerTotal}. Your bet was returned.`; }
     }
     baccMsg.innerText = msg;
   }catch(e){ alert(e) }
@@ -1004,14 +960,11 @@ showMessage('slotsMsg', 'Match symbols to win — higher matches pay more.');
 showMessage('plinkoMsg', 'Drop ball and hope it lands in a high-value bucket.');
 showMessage('minesMsg', 'Choose mines count and press Start.');
 showMessage('crashMsg', 'Start a round and cash out before the crash.');
-document.getElementById('planeMsg').innerText = 'Start a flight — plane will hit boosts/deductions on the way to the carrier. Cash out anytime.';
-if(document.getElementById('rouletteMsg')) document.getElementById('rouletteMsg').innerText = 'Click a bet, set your bet amount, then press Spin.';
-
+showMessage('planeMsg', 'Start a flight — plane will hit boosts/deductions on the way to the carrier. Cash out anytime.');
+showMessage('rouletteMsg', 'Click a bet, set your bet amount, then press Spin.');
 
 window.addEventListener('focus', ()=> { if(getBal()<0) setBal(0); renderBalance(); });
-window.addEventListener('resize', ()=> { if(!planeState.running) resetPlaneUI(); renderMarkers(); });
-
-/* End of script */
+window.addEventListener('resize', ()=> { if(planeTrack && !planeState.running) resetPlaneUI(); renderMarkers(); });
 </script>
 </body>
 </html>
